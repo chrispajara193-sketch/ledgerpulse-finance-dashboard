@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LedgerPulse — Multi-Currency Finance Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js UMD Build -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand-wrap">
+        <div class="brand">
+          <span class="brand-icon">◈</span>
+          <span>LedgerPulse</span>
+        </div>
+        <div class="status-pills">
+          <span id="fxStatusBadge" class="pill pill-info">Loading FX...</span>
+          <span id="storageStatusBadge" class="pill pill-neutral">Demo Mode</span>
+        </div>
+      </div>
+
+      <div class="topbar-controls">
+        <div class="control-group">
+          <label for="displayCurrency" class="sr-only">Display Currency</label>
+          <select id="displayCurrency" title="Convert entire dashboard currency">
+            <option value="USD">USD ($)</option>
+            <option value="PHP">PHP (₱)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+          </select>
+        </div>
+
+        <button id="exportCsvBtn" class="btn btn-outline btn-sm" title="Export filtered rows to CSV">
+          ⬇ Export CSV
+        </button>
+
+        <button id="themeToggle" class="btn-icon" aria-label="Toggle Dark Mode" title="Toggle theme">
+          🌙
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container dashboard">
+
+    <!-- KPI Summary Cards -->
+    <section class="kpi-grid" aria-label="Financial Summary">
+      <article class="card kpi-card">
+        <span class="kpi-label">Net Balance</span>
+        <strong id="kpiBalance" class="kpi-value tabular">$0.00</strong>
+        <span class="kpi-sub">Across all filtered records</span>
+      </article>
+
+      <article class="card kpi-card">
+        <span class="kpi-label">Total Income</span>
+        <strong id="kpiIncome" class="kpi-value text-success tabular">$0.00</strong>
+        <span class="kpi-sub">Inflows converted to display currency</span>
+      </article>
+
+      <article class="card kpi-card">
+        <span class="kpi-label">Total Expenses</span>
+        <strong id="kpiExpenses" class="kpi-value text-danger tabular">$0.00</strong>
+        <span class="kpi-sub">Outflows converted to display currency</span>
+      </article>
+
+      <article class="card kpi-card">
+        <div class="budget-header">
+          <span class="kpi-label">Expense Budget</span>
+          <div class="budget-edit">
+            <label for="budgetInput" class="sr-only">Monthly Budget</label>
+            <input type="number" id="budgetInput" min="1" step="50" value="2500" title="Set budget in current display currency" />
+          </div>
+        </div>
+        <strong id="budgetText" class="kpi-value tabular">0% used</strong>
+        <div class="progress-track">
+          <div id="budgetProgressBar" class="progress-fill"></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Data Visualization Row -->
+    <section class="charts-grid" aria-label="Analytics Charts">
+      <article class="card chart-card">
+        <div class="card-header">
+          <h2>Monthly Cashflow</h2>
+          <span class="card-meta">Income vs. Expenses</span>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="cashflowChart"></canvas>
+        </div>
+      </article>
+
+      <article class="card chart-card">
+        <div class="card-header">
+          <h2>Spending by Category</h2>
+          <span class="card-meta">Expense breakdown</span>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </article>
+    </section>
+
+    <!-- Main Workspace: Add Form + Transaction Table -->
+    <section class="workspace-grid">
+
+      <!-- Left: Add Transaction Form -->
+      <aside class="card form-card">
+        <div class="card-header">
+          <h2>Log Transaction</h2>
+        </div>
+
+        <form id="txForm">
+          <div class="form-group">
+            <label for="txTitle">Description</label>
+            <input type="text" id="txTitle" placeholder="e.g. Cloud Hosting, Client Retainer" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="txAmount">Amount</label>
+              <input type="number" id="txAmount" step="0.01" min="0.01" placeholder="0.00" required />
+            </div>
+
+            <div class="form-group">
+              <label for="txCurrency">Currency</label>
+              <select id="txCurrency">
+                <option value="USD">USD ($)</option>
+                <option value="PHP">PHP (₱)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="JPY">JPY (¥)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="txType">Type</label>
+              <select id="txType">
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="txCategory">Category</label>
+              <select id="txCategory">
+                <option value="Housing">Housing</option>
+                <option value="Food">Food & Dining</option>
+                <option value="Transport">Transport</option>
+                <option value="Software">Software & Bills</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Salary">Salary</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="txDate">Date</label>
+            <input type="date" id="txDate" required />
+          </div>
+
+          <button type="submit" id="txSubmitBtn" class="btn btn-primary btn-full">
+            + Add Transaction
+          </button>
+        </form>
+      </aside>
+
+      <!-- Right: Filterable Transactions Ledger -->
+      <div class="card table-card">
+        <div class="table-toolbar">
+          <div class="table-title-wrap">
+            <h2>Transactions</h2>
+            <span id="txCount" class="badge-count">0</span>
+          </div>
+
+          <div class="filters-wrap">
+            <input type="search" id="searchInput" placeholder="Search description..." aria-label="Search transactions" />
+
+            <select id="filterType" aria-label="Filter by type">
+              <option value="all">All Types</option>
+              <option value="income">Income</option>
+              <option value="expense">Expenses</option>
+            </select>
+
+            <select id="filterCategory" aria-label="Filter by category">
+              <option value="all">All Categories</option>
+              <option value="Housing">Housing</option>
+              <option value="Food">Food</option>
+              <option value="Transport">Transport</option>
+              <option value="Software">Software</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Salary">Salary</option>
+              <option value="Freelance">Freelance</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th class="text-right">Amount</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody"></tbody>
+          </table>
+
+          <div id="emptyState" class="empty-state" hidden>
+            No transactions match your current filters.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer container">
+    <span id="fxUpdatedAt">Exchange rates synced locally</span>
+    <span>
+      <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer">Rates By Exchange Rate API</a>
+    </span>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+</body>
+</html>
